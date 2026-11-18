@@ -1,6 +1,6 @@
 // =====================================================
 // ROADGUARD - SUPABASE VERSION
-// Gemeinsame Meldungen, Echtzeit und Admin-System
+// Gemeinsame Meldungen, Echtzeit, Admin und Live-GPS
 // =====================================================
 
 const SUPABASE_URL = "https://wsglphxrufpuacabqusr.supabase.co";
@@ -21,6 +21,10 @@ let reports = [];
 let adminMode = false;
 let currentUser = null;
 
+// LIVE-STANDORT
+let locationWatchId = null;
+let hasInitialLocation = false;
+
 const reportMarkers = new Map();
 const confirmationCounts = new Map();
 
@@ -33,9 +37,15 @@ document.addEventListener("DOMContentLoaded", startRoadguard);
 
 async function startRoadguard() {
     initializeMap();
+
+    // Live-Standort automatisch starten
+    startLiveLocation();
+
     initializeAddressSearch();
+
     await checkLogin();
     await loadReports();
+
     subscribeToChanges();
 
     supabaseClient.auth.onAuthStateChange(async (_event, session) => {
@@ -410,45 +420,80 @@ async function searchAddress() {
     }
 }
 
+
 // =====================================================
-// STANDORT
+// LIVE-STANDORT
 // =====================================================
 
-function getMyLocation() {
+function startLiveLocation() {
     if (!navigator.geolocation) {
-        alert("Dein Browser unterstützt keine Standortbestimmung.");
+        console.error("Standortbestimmung wird nicht unterstützt.");
         return;
     }
 
-    navigator.geolocation.getCurrentPosition(
+    // Verhindert, dass mehrere GPS-Überwachungen gleichzeitig starten.
+    if (locationWatchId !== null) return;
+
+    locationWatchId = navigator.geolocation.watchPosition(
         position => {
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
 
-            map.setView([lat, lon], 16);
+            if (!map) return;
 
-            if (userMarker) {
-                map.removeLayer(userMarker);
+            // Standortmarker erstellen oder aktualisieren.
+            if (!userMarker) {
+                userMarker = L.marker([lat, lon])
+                    .addTo(map)
+                    .bindPopup("📍 Dein aktueller Standort");
+            } else {
+                userMarker.setLatLng([lat, lon]);
             }
 
-            userMarker = L.marker([lat, lon])
-                .addTo(map)
-                .bindPopup("📍 Dein Standort")
-                .openPopup();
+            // Beim ersten Standort auf die eigene Position zoomen.
+            if (!hasInitialLocation) {
+                map.setView([lat, lon], 16);
+                hasInitialLocation = true;
+            } else {
+                // Karte der aktuellen Position folgen lassen.
+                map.panTo([lat, lon], { animate: true });
+            }
 
-            // Entfernungen anzeigen und Meldungen nach Nähe sortieren.
+            // Entfernungen und Gefahrenliste aktualisieren.
             updateReportList();
+
+            console.log("ROADGUARD Live-Standort:", lat, lon);
         },
         error => {
-            console.error("Standortfehler:", error);
-            alert("Standort konnte nicht ermittelt werden. Bitte erlaube den Standortzugriff.");
+            console.error("Live-Standortfehler:", error);
+
+            if (error.code === 1) {
+                alert("Bitte erlaube ROADGUARD den Standortzugriff in deinen iPhone-Einstellungen.");
+            }
         },
         {
             enableHighAccuracy: true,
-            timeout: 15000,
-            maximumAge: 0
+            maximumAge: 3000,
+            timeout: 20000
         }
     );
+}
+
+
+// Der runde Standortknopf bleibt weiterhin funktionsfähig.
+function getMyLocation() {
+    if (userMarker && map) {
+        const position = userMarker.getLatLng();
+
+        map.setView(
+            [position.lat, position.lng],
+            16
+        );
+
+        return;
+    }
+
+    startLiveLocation();
 }
 
 
@@ -741,6 +786,7 @@ async function deleteReport(reportId) {
 
     await loadReports();
 }
+
 
 // =====================================================
 // MELDUNGSLISTE
