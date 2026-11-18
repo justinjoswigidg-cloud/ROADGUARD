@@ -1,0 +1,708 @@
+
+/* =====================================================
+   ROADGUARD - RESPONSIVE DESIGN
+   Optimiert für Android, iPhone, Tablet und PC
+===================================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --background: #10151c;
+    --surface: #151b23;
+    --surface-light: #202833;
+    --border: #303a46;
+    --blue: #287fff;
+    --blue-light: #55a5ff;
+    --text: #f3f6fa;
+    --muted: #8996a5;
+}
+
+html {
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+}
+
+body {
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    background: var(--background);
+    color: var(--text);
+    font-family: Arial, Helvetica, sans-serif;
+    padding-bottom: calc(155px + env(safe-area-inset-bottom));
+    -webkit-tap-highlight-color: transparent;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+/* =====================================================
+   KOPFBEREICH
+===================================================== */
+
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: max(14px, env(safe-area-inset-top)) 16px 14px;
+    background: var(--surface);
+    border-bottom: 1px solid #252d37;
+    position: relative;
+    z-index: 10;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-width: 0;
+}
+
+.brand-icon {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: 13px;
+    background: linear-gradient(135deg, #2488ff, #1554ca);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    box-shadow: 0 0 20px #1474ff33;
+}
+
+.brand h1 {
+    font-size: 19px;
+    letter-spacing: 2px;
+}
+
+.brand span {
+    color: #788696;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+}
+
+.profile-button {
+    border: 1px solid var(--border);
+    background: var(--surface-light);
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    color: white;
+    font-size: 18px;
+}
+
+/* =====================================================
+   SUCHFELD
+===================================================== */
+
+.search-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface-light);
+    margin: 14px 12px;
+    padding: 5px 13px;
+    min-height: 50px;
+    border: 1px solid #2b3542;
+    border-radius: 14px;
+}
+
+.search-box input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: white;
+    width: 100%;
+    min-width: 0;
+    font-size: 16px;
+}
+
+.search-box input::placeholder {
+    color: #8290a0;
+}
+
+.search-box button {
+    min-width: 42px;
+    min-height: 42px;
+}
+
+/* =====================================================
+   KARTE
+===================================================== */
+
+.map-container {
+    position: relative;
+    margin: 0 12px;
+    height: clamp(300px, 43vh, 480px);
+    min-height: 300px;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+    background: var(--surface-light);
+    z-index: 1;
+}
+
+.location-button {
+    position: absolute;
+    z-index: 500;
+    bottom: 16px;
+    right: 14px;
+    width: 50px;
+    height: 50px;
+    border-radius: 15px;
+    background: var(--surface);
+    color: var(--blue-light);
+    border: 1px solid #364351;
+    font-size: 27px;
+    cursor: pointer;
+    box-shadow: 0 3px 12px #0005;
+}
+
+.map-status {
+    position: absolute;
+    top: 13px;
+    left: 13px;
+    z-index: 500;
+    background: var(--surface);
+    padding: 9px 12px;
+    border-radius: 20px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    box-shadow: 0 2px 8px #0004;
+}
+
+.status-dot {
+    width: 7px;
+    height: 7px;
+    background: #35db8a;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #35db8a;
+}
+
+/* =====================================================
+   DASHBOARD UND MELDUNGEN
+===================================================== */
+
+.dashboard {
+    padding: 22px 14px;
+}
+
+.section-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-heading h2 {
+    font-size: 17px;
+}
+
+.section-heading p {
+    color: #8592a1;
+    font-size: 12px;
+    margin-top: 6px;
+}
+
+.live-badge {
+    color: #45d992;
+    background: #17372c;
+    padding: 7px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    white-space: nowrap;
+}
+
+.empty-state,
+.emptyReports {
+    margin-top: 18px;
+    padding: 25px 15px;
+    text-align: center;
+    background: #171e27;
+    border: 1px solid #28323e;
+    border-radius: 18px;
+}
+
+.empty-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+}
+
+.empty-state h3 {
+    font-size: 15px;
+    margin-bottom: 7px;
+}
+
+.empty-state p,
+.emptyReports p {
+    color: #8996a5;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* Meldungskarten */
+
+.reportCard,
+.report-card {
+    width: 100%;
+    margin-top: 12px;
+    padding: 14px;
+    border-radius: 15px;
+    background: var(--surface-light);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-width: 0;
+}
+
+.reportIcon,
+.report-card .report-icon {
+    font-size: 25px;
+    flex-shrink: 0;
+}
+
+.reportInfo {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.reportInfo strong {
+    font-size: 14px;
+}
+
+.reportInfo small {
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.report-card p {
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 5px;
+}
+
+.confirmReportButton {
+    background: #17372c;
+    border: 1px solid #286b4c;
+    color: #54e59b;
+    padding: 9px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.deleteReportButton {
+    background: #482326;
+    border: 1px solid #77353b;
+    color: white;
+    border-radius: 9px;
+    min-width: 36px;
+    min-height: 36px;
+    flex-shrink: 0;
+}
+
+.adminBanner {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 13px;
+    margin-bottom: 12px;
+    background: #17372c;
+    border: 1px solid #286b4c;
+    border-radius: 12px;
+    color: #54e59b;
+    font-size: 12px;
+}
+
+.adminBanner span {
+    color: #b3d9c4;
+}
+
+/* =====================================================
+   MELDEN-BUTTON
+===================================================== */
+
+.report-button {
+    position: fixed;
+    bottom: calc(78px + env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    width: calc(100% - 28px);
+    max-width: 440px;
+    min-height: 54px;
+    background: linear-gradient(135deg, #287fff, #1559d5);
+    color: white;
+    border: none;
+    padding: 15px;
+    border-radius: 16px;
+    font-size: 15px;
+    font-weight: bold;
+    box-shadow: 0 8px 30px #006aff40;
+    cursor: pointer;
+}
+
+.report-plus {
+    font-size: 20px;
+    margin-right: 8px;
+}
+
+/* =====================================================
+   UNTERE NAVIGATION
+===================================================== */
+
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: var(--surface);
+    border-top: 1px solid #28323e;
+    padding: 8px 5px;
+    padding-bottom: max(9px, env(safe-area-inset-bottom));
+}
+
+.nav-item {
+    background: none;
+    border: none;
+    color: #7c8998;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+    min-height: 48px;
+    cursor: pointer;
+}
+
+.nav-item span {
+    font-size: 21px;
+}
+
+.nav-item small {
+    font-size: 10px;
+}
+
+.nav-item.active {
+    color: #4a98ff;
+}
+
+/* =====================================================
+   MODAL-FENSTER
+===================================================== */
+
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: #000000bb;
+    align-items: flex-end;
+    justify-content: center;
+    padding-top: 20px;
+}
+
+.modal.open,
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: #171e27;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    max-height: 90dvh;
+    overflow-y: auto;
+    border-radius: 24px 24px 0 0;
+    padding: 24px 18px calc(25px + env(safe-area-inset-bottom));
+    border: 1px solid var(--border);
+    overscroll-behavior: contain;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.modal-header h2 {
+    font-size: 20px;
+}
+
+.close-button {
+    background: #28323e;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    font-size: 23px;
+    cursor: pointer;
+}
+
+.modal-content > p {
+    color: #8e9baa;
+    margin-bottom: 18px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* =====================================================
+   GEFAHREN-AUSWAHL
+===================================================== */
+
+.hazard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 11px;
+}
+
+.hazard-grid button {
+    background: #222c37;
+    border: 1px solid #354250;
+    border-radius: 15px;
+    min-height: 105px;
+    padding: 15px 8px;
+    color: white;
+    font-size: 27px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.hazard-grid button:active {
+    background: #30445c;
+    border-color: var(--blue);
+}
+
+.hazard-grid button span {
+    display: block;
+    font-size: 12px;
+    margin-top: 9px;
+}
+
+/* =====================================================
+   FORMULARE UND ANMELDUNG
+===================================================== */
+
+.modal-content input {
+    width: 100%;
+    min-height: 48px;
+    padding: 12px;
+    margin-bottom: 12px;
+    background: #202833;
+    border: 1px solid #354250;
+    border-radius: 11px;
+    color: white;
+    font-size: 16px;
+    outline: none;
+}
+
+.modal-content input:focus {
+    border-color: var(--blue);
+}
+
+.modal-content input::placeholder {
+    color: #8290a0;
+}
+
+.modal-content button {
+    touch-action: manipulation;
+}
+
+/* =====================================================
+   LEAFLET KARTE
+===================================================== */
+
+.leaflet-container {
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.leaflet-popup-content-wrapper {
+    border-radius: 12px;
+}
+
+.leaflet-popup-content {
+    margin: 13px;
+    line-height: 1.5;
+    font-size: 13px;
+}
+
+.leaflet-control-zoom a {
+    width: 38px !important;
+    height: 38px !important;
+    line-height: 38px !important;
+    font-size: 21px !important;
+}
+
+/* =====================================================
+   KLEINE HANDYS
+===================================================== */
+
+@media (max-width: 380px) {
+    .brand h1 {
+        font-size: 17px;
+    }
+
+    .brand span {
+        font-size: 8px;
+    }
+
+    .map-container {
+        margin: 0 9px;
+        height: 38vh;
+        min-height: 270px;
+    }
+
+    .dashboard {
+        padding: 18px 10px;
+    }
+
+    .reportCard,
+    .report-card {
+        padding: 10px;
+        gap: 8px;
+    }
+
+    .confirmReportButton {
+        padding: 8px;
+        font-size: 10px;
+    }
+
+    .hazard-grid button {
+        min-height: 90px;
+    }
+}
+
+/* =====================================================
+   TABLETS UND DESKTOP
+===================================================== */
+
+@media (min-width: 700px) {
+    body {
+        padding-bottom: 120px;
+    }
+
+    .topbar {
+        padding-left: 25px;
+        padding-right: 25px;
+    }
+
+    .search-box {
+        margin: 18px 20px;
+    }
+
+    .map-container {
+        margin: 0 20px;
+        height: min(55vh, 550px);
+    }
+
+    .dashboard {
+        padding: 25px 25px;
+    }
+
+    .bottom-nav {
+        padding-top: 10px;
+    }
+}
+
+@media (min-width: 1000px) {
+    .map-container {
+        height: 550px;
+        max-width: 1400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .search-box,
+    .dashboard {
+        max-width: 1400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+/* =====================================================
+   QUERFORMAT AUF HANDYS
+===================================================== */
+
+@media (max-height: 500px) and (orientation: landscape) {
+    .map-container {
+        height: 65vh;
+        min-height: 220px;
+    }
+
+    .modal-content {
+        max-height: 85vh;
+    }
+
+    .hazard-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+/* =====================================================
+   TOUCH UND ANIMATIONEN
+===================================================== */
+
+button {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+button:active {
+    opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
+}

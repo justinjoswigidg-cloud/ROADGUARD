@@ -1,0 +1,273 @@
+
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    >
+
+    <meta name="theme-color" content="#10151c">
+    <meta name="background-color" content="#10151c">
+    <meta name="color-scheme" content="dark">
+
+    <meta
+        name="description"
+        content="ROADGUARD – Gefahren melden, Verkehrsinformationen teilen und sicherer unterwegs sein."
+    >
+
+    <!-- Android / PWA -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="ROADGUARD">
+
+    <!-- Apple / iPhone -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="ROADGUARD">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <title>ROADGUARD</title>
+
+    <!-- App-Symbol -->
+    <link rel="icon" type="image/png" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Design und Karte -->
+    <link rel="stylesheet" href="style.css">
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+</head>
+
+<body>
+
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-icon">R</div>
+            <div>
+                <h1>ROADGUARD</h1>
+                <span>DRIVE SMART. STAY SAFE.</span>
+            </div>
+        </div>
+
+        <button
+            class="profile-button"
+            onclick="openAuthModal()"
+            aria-label="Profil"
+        >👤</button>
+    </header>
+
+    <main>
+
+        <div class="search-box">
+            <span>🔍</span>
+            <input
+                id="addressSearch"
+                type="text"
+                placeholder="Ort oder Adresse suchen"
+                autocomplete="off"
+            >
+        </div>
+
+        <section class="map-container">
+            <div id="map"></div>
+
+            <button
+                class="location-button"
+                onclick="getMyLocation()"
+                title="Mein Standort"
+                aria-label="Meinen Standort anzeigen"
+            >◎</button>
+
+            <div class="map-status">
+                <span class="status-dot"></span>
+                <span>ROADGUARD LIVE</span>
+            </div>
+        </section>
+
+        <section class="dashboard">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Gefahren in deiner Nähe</h2>
+                    <p>Community-Meldungen in Echtzeit</p>
+                </div>
+
+                <span class="live-badge">LIVE</span>
+            </div>
+
+            <div class="report-list" id="reportList">
+                <div class="empty-state">
+                    <div class="empty-icon">🛣️</div>
+                    <h3>Lade Meldungen ...</h3>
+                    <p>Die Verbindung wird hergestellt.</p>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <button
+        class="report-button"
+        onclick="openReportMenu()"
+    >
+        <span class="report-plus">＋</span>
+        Gefahr melden
+    </button>
+
+    <nav class="bottom-nav">
+
+        <button class="nav-item active" onclick="showMap()">
+            <span>⌖</span>
+            <small>Karte</small>
+        </button>
+
+        <button class="nav-item" onclick="showReports()">
+            <span>⚠</span>
+            <small>Meldungen</small>
+        </button>
+
+        <button class="nav-item" onclick="showCommunity()">
+            <span>♧</span>
+            <small>Community</small>
+        </button>
+
+        <button class="nav-item" onclick="showSettings()">
+            <span>⚙</span>
+            <small>Einstellungen</small>
+        </button>
+
+    </nav>
+
+    <!-- Gefahren melden -->
+    <div class="modal" id="reportModal">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h2>Gefahr melden</h2>
+
+                <button
+                    onclick="closeReportMenu()"
+                    class="close-button"
+                    aria-label="Schließen"
+                >×</button>
+            </div>
+
+            <p>Welche Gefahr möchtest du melden?</p>
+
+            <div class="hazard-grid">
+
+                <button onclick="submitReport('Unfall','🚗')">
+                    🚗<span>Unfall</span>
+                </button>
+
+                <button onclick="submitReport('Stau','🚦')">
+                    🚦<span>Stau</span>
+                </button>
+
+                <button onclick="submitReport('Baustelle','🚧')">
+                    🚧<span>Baustelle</span>
+                </button>
+
+                <button onclick="submitReport('Hindernis','⚠️')">
+                    ⚠️<span>Hindernis</span>
+                </button>
+
+                <button onclick="submitReport('Pannenfahrzeug','🛠️')">
+                    🛠️<span>Pannenfahrzeug</span>
+                </button>
+
+                <button onclick="submitReport('Glatteis','❄️')">
+                    ❄️<span>Glatteis</span>
+                </button>
+
+                <button onclick="submitReport('Fester Blitzer','📸')">
+                    📸<span>Fester Blitzer</span>
+                </button>
+
+                <button onclick="submitReport('Mobiler Blitzer','🚔')">
+                    🚔<span>Mobiler Blitzer</span>
+                </button>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Anmeldung und Registrierung -->
+    <div class="modal" id="authModal">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h2>ROADGUARD Konto</h2>
+
+                <button
+                    onclick="closeAuthModal()"
+                    class="close-button"
+                    aria-label="Schließen"
+                >×</button>
+            </div>
+
+            <p id="authStatus">
+                Melde dich an oder erstelle ein kostenloses Konto.
+            </p>
+
+            <div id="authForm">
+
+                <input
+                    id="authEmail"
+                    type="email"
+                    placeholder="E-Mail-Adresse"
+                    autocomplete="email"
+                >
+
+                <input
+                    id="authPassword"
+                    type="password"
+                    placeholder="Passwort"
+                    autocomplete="current-password"
+                >
+
+                <button
+                    type="button"
+                    onclick="signIn()"
+                    class="auth-action"
+                >Anmelden</button>
+
+                <button
+                    type="button"
+                    onclick="signUp()"
+                    class="auth-action secondary"
+                >Kostenlos registrieren</button>
+
+            </div>
+
+            <button
+                type="button"
+                id="signOutButton"
+                onclick="signOut()"
+                class="auth-action secondary"
+                style="display:none;"
+            >
+                Abmelden
+            </button>
+
+        </div>
+    </div>
+
+    <!-- Kartenbibliothek -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- ROADGUARD -->
+    <script src="app.js"></script>
+
+</body>
+</html>
