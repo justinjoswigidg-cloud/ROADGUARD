@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -48,6 +47,7 @@
 <body>
 
     <header class="topbar">
+
         <div class="brand">
             <div class="brand-icon">R</div>
             <div>
@@ -56,11 +56,25 @@
             </div>
         </div>
 
-        <button
-            class="profile-button"
-            onclick="openAuthModal()"
-            aria-label="Profil"
-        >👤</button>
+        <!-- Rechte obere Menüleiste -->
+        <div class="topbar-actions">
+
+            <button
+                id="roadguardSoundButton"
+                class="profile-button sound-button"
+                type="button"
+                aria-label="Warntöne aktivieren"
+                title="Warntöne aktivieren"
+            >🔇</button>
+
+            <button
+                class="profile-button"
+                onclick="openAuthModal()"
+                aria-label="Profil"
+            >👤</button>
+
+        </div>
+
     </header>
 
     <main>
@@ -76,6 +90,7 @@
         </div>
 
         <section class="map-container">
+
             <div id="map"></div>
 
             <button
@@ -89,28 +104,34 @@
                 <span class="status-dot"></span>
                 <span>ROADGUARD LIVE</span>
             </div>
+
         </section>
 
         <section class="dashboard">
 
             <div class="section-heading">
+
                 <div>
                     <h2>Gefahren in deiner Nähe</h2>
                     <p>Community-Meldungen in Echtzeit</p>
                 </div>
 
                 <span class="live-badge">LIVE</span>
+
             </div>
 
             <div class="report-list" id="reportList">
+
                 <div class="empty-state">
                     <div class="empty-icon">🛣️</div>
                     <h3>Lade Meldungen ...</h3>
                     <p>Die Verbindung wird hergestellt.</p>
                 </div>
+
             </div>
 
         </section>
+
     </main>
 
     <button
@@ -147,6 +168,7 @@
 
     <!-- Gefahren melden -->
     <div class="modal" id="reportModal">
+
         <div class="modal-content">
 
             <div class="modal-header">
@@ -196,14 +218,18 @@
                 </button>
 
             </div>
+
         </div>
+
     </div>
 
     <!-- Anmeldung und Registrierung -->
     <div class="modal" id="authModal">
+
         <div class="modal-content">
 
             <div class="modal-header">
+
                 <h2>ROADGUARD Konto</h2>
 
                 <button
@@ -211,6 +237,7 @@
                     class="close-button"
                     aria-label="Schließen"
                 >×</button>
+
             </div>
 
             <p id="authStatus">
@@ -258,6 +285,7 @@
             </button>
 
         </div>
+
     </div>
 
     <!-- Kartenbibliothek -->
