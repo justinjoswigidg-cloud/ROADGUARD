@@ -706,3 +706,47 @@ button:active {
         animation-duration: 0.01ms !important;
     }
 }
+
+
+.topbar-actions {
+    display: flex !important;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+    visibility: visible !important;
+}
+
+.sound-button {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    min-width: 42px;
+    min-height: 42px;
+    padding: 8px;
+    font-size: 19px;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.sound-button.sound-active {
+    border-color: #3185ff;
+    color: #58a0ff;
+}
+
+@media (max-width: 600px) {
+    .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        gap: 8px;
+    }
+
+    .topbar-actions {
+        display: flex !important;
+        flex-shrink: 0;
+        gap: 6px;
+    }
+}
