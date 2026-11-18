@@ -1,3 +1,4 @@
+
 // =====================================================
 // ROADGUARD - SUPABASE VERSION
 // Gemeinsame Meldungen, Echtzeit, Admin und Live-GPS
@@ -21,7 +22,6 @@ let reports = [];
 let adminMode = false;
 let currentUser = null;
 
-// LIVE-STANDORT
 let locationWatchId = null;
 let hasInitialLocation = false;
 
@@ -38,9 +38,7 @@ document.addEventListener("DOMContentLoaded", startRoadguard);
 async function startRoadguard() {
     initializeMap();
 
-    // Live-Standort automatisch starten
     startLiveLocation();
-
     initializeAddressSearch();
 
     await checkLogin();
@@ -55,6 +53,9 @@ async function startRoadguard() {
         updateAuthInterface();
         await loadReports();
     });
+
+    // Update-Fenster beim ersten Start dieser Version
+    showRoadguardInfoIfNeeded();
 
     console.log("ROADGUARD gestartet.");
 }
@@ -422,6 +423,66 @@ async function searchAddress() {
 
 
 // =====================================================
+// STANDORT-PFEIL
+// =====================================================
+
+function createUserArrowIcon(heading = 0) {
+
+    if (!document.getElementById("roadguard-arrow-style")) {
+        const style = document.createElement("style");
+        style.id = "roadguard-arrow-style";
+        style.textContent = `
+            .roadguard-user-arrow {
+                background: transparent !important;
+                border: none !important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    return L.divIcon({
+        className: "roadguard-user-arrow",
+
+        html: `
+            <div style="
+                width: 48px;
+                height: 48px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transform: rotate(${heading}deg);
+                filter: drop-shadow(0 2px 4px rgba(0,0,0,.55));
+            ">
+                <svg
+                    width="46"
+                    height="46"
+                    viewBox="0 0 46 46"
+                    xmlns="http://www.w3.org/2000/svg"
+                >
+                    <path
+                        d="M23 3 L39 41 L23 32 L7 41 Z"
+                        fill="#1677ff"
+                        stroke="white"
+                        stroke-width="3"
+                        stroke-linejoin="round"
+                    />
+                    <path
+                        d="M23 9 L23 29"
+                        stroke="#ffffff"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                    />
+                </svg>
+            </div>
+        `,
+
+        iconSize: [48, 48],
+        iconAnchor: [24, 24]
+    });
+}
+
+
+// =====================================================
 // LIVE-STANDORT
 // =====================================================
 
@@ -431,7 +492,6 @@ function startLiveLocation() {
         return;
     }
 
-    // Verhindert, dass mehrere GPS-Überwachungen gleichzeitig starten.
     if (locationWatchId !== null) return;
 
     locationWatchId = navigator.geolocation.watchPosition(
@@ -441,28 +501,38 @@ function startLiveLocation() {
 
             if (!map) return;
 
-            // Standortmarker erstellen oder aktualisieren.
+            const heading = Number.isFinite(position.coords.heading)
+                ? position.coords.heading
+                : 0;
+
             if (!userMarker) {
-                userMarker = L.marker([lat, lon])
+                userMarker = L.marker([lat, lon], {
+                    icon: createUserArrowIcon(heading),
+                    zIndexOffset: 1000
+                })
                     .addTo(map)
-                    .bindPopup("📍 Dein aktueller Standort");
+                    .bindPopup("Dein aktueller Standort");
             } else {
                 userMarker.setLatLng([lat, lon]);
+                userMarker.setIcon(createUserArrowIcon(heading));
             }
 
-            // Beim ersten Standort auf die eigene Position zoomen.
             if (!hasInitialLocation) {
                 map.setView([lat, lon], 16);
                 hasInitialLocation = true;
             } else {
-                // Karte der aktuellen Position folgen lassen.
                 map.panTo([lat, lon], { animate: true });
             }
 
-            // Entfernungen und Gefahrenliste aktualisieren.
             updateReportList();
 
-            console.log("ROADGUARD Live-Standort:", lat, lon);
+            console.log(
+                "ROADGUARD Live-Standort:",
+                lat,
+                lon,
+                "Richtung:",
+                heading
+            );
         },
         error => {
             console.error("Live-Standortfehler:", error);
@@ -824,7 +894,6 @@ function updateReportList() {
         return;
     }
 
-    // Wenn der eigene Standort bekannt ist, kommen die nächsten Gefahren zuerst.
     const userPosition = userMarker ? userMarker.getLatLng() : null;
 
     const sortedReports = [...reports].sort((a, b) => {
@@ -894,7 +963,6 @@ function updateReportList() {
 
         const count = confirmationCounts.get(report.id) || 0;
 
-        // Entfernung zum eigenen Standort berechnen.
         let distanceText = "";
 
         if (userPosition) {
@@ -944,7 +1012,6 @@ function updateReportList() {
             ` : ""}
         `;
 
-        // Klick auf die Meldung öffnet ihre Position auf der Karte.
         card.addEventListener("click", event => {
             if (event.target.closest("button")) return;
 
@@ -1008,6 +1075,273 @@ function showCommunity() {
 
 function showSettings() {
     openAuthModal();
+}
+
+
+// =====================================================
+// ROADGUARD UPDATE-FENSTER
+// =====================================================
+
+// Versionsnummer ändern, damit das Fenster bei einem
+// späteren Update erneut angezeigt wird.
+
+const ROADGUARD_INFO_VERSION = "roadguard-info-v1.0";
+
+function showRoadguardInfoIfNeeded() {
+
+    try {
+        if (localStorage.getItem(ROADGUARD_INFO_VERSION) === "accepted") {
+            return;
+        }
+    } catch (error) {
+        console.error("ROADGUARD: Speicherzugriff nicht möglich.", error);
+    }
+
+    if (document.getElementById("roadguardWelcome")) return;
+
+    const style = document.createElement("style");
+
+    style.id = "roadguard-welcome-style";
+
+    style.textContent = `
+        #roadguardWelcome {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            background: rgba(0, 0, 0, 0.84);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            padding-top: max(18px, env(safe-area-inset-top));
+            padding-bottom: max(18px, env(safe-area-inset-bottom));
+            backdrop-filter: blur(8px);
+        }
+
+        #roadguardWelcome .welcomeBox {
+            width: 100%;
+            max-width: 440px;
+            max-height: 88vh;
+            overflow-y: auto;
+            background: #151d29;
+            color: #ffffff;
+            border: 1px solid #29384b;
+            border-radius: 22px;
+            padding: 26px;
+            box-shadow: 0 15px 50px rgba(0,0,0,.5);
+            text-align: center;
+        }
+
+        #roadguardWelcome .welcomeLogo {
+            font-size: 30px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            color: #3185ff;
+            margin-bottom: 5px;
+        }
+
+        #roadguardWelcome .updateBadge {
+            display: inline-block;
+            background: rgba(22,119,255,.16);
+            color: #60a5fa;
+            border: 1px solid rgba(49,133,255,.35);
+            border-radius: 30px;
+            padding: 6px 13px;
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin: 12px 0 17px;
+        }
+
+        #roadguardWelcome .versionText {
+            color: #8292a7;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        #roadguardWelcome h2 {
+            font-size: 25px;
+            margin: 0 0 12px;
+            color: #ffffff;
+        }
+
+        #roadguardWelcome .updateTitle {
+            color: #3185ff;
+            font-size: 19px;
+            font-weight: bold;
+            margin-bottom: 18px;
+        }
+
+        #roadguardWelcome .updateDescription {
+            color: #b7c5d6;
+            font-size: 14px;
+            line-height: 1.65;
+            margin: 0 0 20px;
+        }
+
+        #roadguardWelcome .updateItem {
+            display: flex;
+            align-items: flex-start;
+            text-align: left;
+            gap: 13px;
+            background: #1c293a;
+            border: 1px solid #2b3d54;
+            border-radius: 13px;
+            padding: 13px;
+            margin: 10px 0;
+        }
+
+        #roadguardWelcome .updateIcon {
+            font-size: 25px;
+            min-width: 30px;
+        }
+
+        #roadguardWelcome .updateText strong {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        #roadguardWelcome .updateText span {
+            display: block;
+            color: #aebdd0;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        #roadguardWelcome .welcomeButton {
+            width: 100%;
+            margin-top: 19px;
+            padding: 15px;
+            background: #1677ff;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        #roadguardWelcome .welcomeButton:active {
+            transform: scale(.98);
+        }
+
+        #roadguardWelcome .welcomeFooter {
+            color: #8292a7;
+            font-size: 11px;
+            margin-top: 13px;
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    const overlay = document.createElement("div");
+    overlay.id = "roadguardWelcome";
+
+    overlay.innerHTML = `
+        <div class="welcomeBox">
+
+            <div class="welcomeLogo">ROADGUARD</div>
+
+            <div class="updateBadge">
+                NEUES UPDATE
+            </div>
+
+            <div class="versionText">
+                VERSION 1.0
+            </div>
+
+            <h2>Das ist neu!</h2>
+
+            <div class="updateTitle">
+                📍 Live Tracking
+            </div>
+
+            <p class="updateDescription">
+                ROADGUARD bekommt eine neue Funktion:
+                Dein Standort wird jetzt automatisch während
+                der Nutzung der App verfolgt.
+            </p>
+
+            <div class="updateItem">
+                <div class="updateIcon">📍</div>
+                <div class="updateText">
+                    <strong>Automatische Standortaktualisierung</strong>
+                    <span>
+                        Dein Standort wird während der Nutzung
+                        automatisch aktualisiert. Du musst nicht
+                        mehr ständig auf den Standortknopf drücken.
+                    </span>
+                </div>
+            </div>
+
+            <div class="updateItem">
+                <div class="updateIcon">🧭</div>
+                <div class="updateText">
+                    <strong>Neuer Richtungspfeil</strong>
+                    <span>
+                        Der blaue Pfeil zeigt deinen Standort
+                        und, sofern GPS-Daten verfügbar sind,
+                        deine Bewegungsrichtung.
+                    </span>
+                </div>
+            </div>
+
+            <div class="updateItem">
+                <div class="updateIcon">🗺️</div>
+                <div class="updateText">
+                    <strong>Standort auf der Karte</strong>
+                    <span>
+                        Die Karte kann sich automatisch an
+                        deinen aktuellen Standort anpassen.
+                    </span>
+                </div>
+            </div>
+
+            <div class="updateItem">
+                <div class="updateIcon">🛠️</div>
+                <div class="updateText">
+                    <strong>Fehlerbehebung</strong>
+                    <span>
+                        Einige Fehler wurden behoben z.B 
+                        (Fehler beim laden der Karte, Live Verfolgung)
+                         und vieles mehr.
+                    </span>
+                </div>
+            </div>
+
+            <button
+                class="welcomeButton"
+                id="roadguardWelcomeAccept"
+                type="button"
+            >
+                Verstanden
+            </button>
+
+            <div class="welcomeFooter">
+                ROADGUARD · Version 1.0
+            </div>
+
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    document.getElementById("roadguardWelcomeAccept")
+        .addEventListener("click", () => {
+
+            try {
+                localStorage.setItem(
+                    ROADGUARD_INFO_VERSION,
+                    "accepted"
+                );
+            } catch (error) {
+                console.error("ROADGUARD: Bestätigung konnte nicht gespeichert werden.", error);
+            }
+
+            overlay.remove();
+            style.remove();
+        });
 }
 
 
