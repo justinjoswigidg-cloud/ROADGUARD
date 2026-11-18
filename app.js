@@ -30,12 +30,172 @@ const confirmationCounts = new Map();
 
 
 // =====================================================
+// ROADGUARD WARNTOENE
+// =====================================================
+
+let roadguardAudioContext = null;
+let roadguardAudioEnabled = false;
+
+const ROADGUARD_WARNING_SETTINGS = {
+    firstDistance: 500,
+    secondDistance: 150,
+    volume: 0.9
+};
+
+const playedWarnings = new Map();
+
+
+function initializeWarningSounds() {
+
+    const button = document.getElementById("roadguardSoundButton");
+
+    if (!button) {
+        console.error("ROADGUARD Lautsprecher-Button nicht gefunden.");
+        return;
+    }
+
+    function updateSoundButton() {
+
+        if (roadguardAudioEnabled) {
+            button.textContent = "🔊";
+            button.title = "Warntöne deaktivieren";
+            button.setAttribute("aria-label", "Warntöne deaktivieren");
+            button.classList.add("sound-active");
+        } else {
+            button.textContent = "🔇";
+            button.title = "Warntöne aktivieren";
+            button.setAttribute("aria-label", "Warntöne aktivieren");
+            button.classList.remove("sound-active");
+        }
+    }
+
+    updateSoundButton();
+
+    button.addEventListener("click", async () => {
+
+        try {
+            const AudioContextClass =
+                window.AudioContext || window.webkitAudioContext;
+
+            if (!AudioContextClass) {
+                alert("Dein Browser unterstützt keine Warntöne.");
+                return;
+            }
+
+            if (!roadguardAudioContext) {
+                roadguardAudioContext = new AudioContextClass();
+            }
+
+            if (roadguardAudioEnabled) {
+                roadguardAudioEnabled = false;
+                updateSoundButton();
+                return;
+            }
+
+            await roadguardAudioContext.resume();
+
+            roadguardAudioEnabled =
+                roadguardAudioContext.state === "running";
+
+            updateSoundButton();
+
+            if (!roadguardAudioEnabled) {
+                alert("Die Warntöne konnten nicht aktiviert werden.");
+            }
+
+        } catch (error) {
+            console.error("ROADGUARD Audio:", error);
+            alert("Die Warntöne konnten nicht aktiviert werden.");
+        }
+    });
+}
+
+
+// =====================================================
+// WARNTOENE ABSPIELEN
+// =====================================================
+
+function playRoadguardTone(category, level) {
+
+    if (
+        !roadguardAudioEnabled ||
+        !roadguardAudioContext ||
+        roadguardAudioContext.state !== "running"
+    ) {
+        return;
+    }
+
+    const context = roadguardAudioContext;
+    const isBlitzer = category === "blitzer";
+
+    // Bei 500 m normaler Ton, bei 150 m etwas höher.
+    let frequency;
+
+    if (isBlitzer) {
+        frequency = level === 1 ? 1200 : 1450;
+    } else {
+        frequency = level === 1 ? 700 : 850;
+    }
+
+    const volume = ROADGUARD_WARNING_SETTINGS.volume;
+
+    function playBeep(startTime, duration) {
+
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(frequency, startTime);
+
+        gain.gain.setValueAtTime(0, startTime);
+
+        gain.gain.linearRampToValueAtTime(
+            volume,
+            startTime + 0.015
+        );
+
+        gain.gain.setValueAtTime(
+            volume,
+            startTime + duration - 0.02
+        );
+
+        gain.gain.linearRampToValueAtTime(
+            0,
+            startTime + duration
+        );
+
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration);
+    }
+
+    const now = context.currentTime;
+
+    if (isBlitzer) {
+        // Zwei schnelle Pieptöne.
+        playBeep(now, 0.12);
+        playBeep(now + 0.18, 0.12);
+    } else {
+        // Ein einzelner kurzer Piepton.
+        playBeep(now, 0.18);
+    }
+}
+
+
+// =====================================================
 // START
 // =====================================================
+
+document.addEventListener("DOMContentLoaded", () => {
+    initializeWarningSounds();
+});
 
 document.addEventListener("DOMContentLoaded", startRoadguard);
 
 async function startRoadguard() {
+
     initializeMap();
 
     startLiveLocation();
@@ -47,6 +207,7 @@ async function startRoadguard() {
     subscribeToChanges();
 
     supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+
         currentUser = session?.user || null;
 
         await checkAdmin();
@@ -54,7 +215,6 @@ async function startRoadguard() {
         await loadReports();
     });
 
-    // Update-Fenster beim ersten Start dieser Version
     showRoadguardInfoIfNeeded();
 
     console.log("ROADGUARD gestartet.");
@@ -66,6 +226,7 @@ async function startRoadguard() {
 // =====================================================
 
 function initializeMap() {
+
     if (map) return;
 
     const mapElement = document.getElementById("map");
@@ -94,6 +255,7 @@ function initializeMap() {
 // =====================================================
 
 async function checkLogin() {
+
     const { data, error } = await supabaseClient.auth.getSession();
 
     if (error) {
@@ -108,6 +270,7 @@ async function checkLogin() {
 }
 
 async function checkAdmin() {
+
     adminMode = false;
 
     if (!currentUser) return;
@@ -125,16 +288,21 @@ async function checkAdmin() {
 }
 
 function openAuthModal() {
+
     const modal = document.getElementById("authModal");
+
     if (!modal) return;
 
     modal.style.display = "flex";
     modal.classList.add("active");
+
     updateAuthInterface();
 }
 
 function closeAuthModal() {
+
     const modal = document.getElementById("authModal");
+
     if (!modal) return;
 
     modal.style.display = "none";
@@ -142,6 +310,7 @@ function closeAuthModal() {
 }
 
 function updateAuthInterface() {
+
     const status = document.getElementById("authStatus");
     const form = document.getElementById("authForm");
     const signOutButton = document.getElementById("signOutButton");
@@ -149,10 +318,13 @@ function updateAuthInterface() {
     if (!status || !form || !signOutButton) return;
 
     if (currentUser) {
+
         status.textContent = "Angemeldet als " + currentUser.email;
         form.style.display = "none";
         signOutButton.style.display = "block";
+
     } else {
+
         status.textContent = "Melde dich an oder erstelle ein kostenloses Konto.";
         form.style.display = "block";
         signOutButton.style.display = "none";
@@ -160,6 +332,7 @@ function updateAuthInterface() {
 }
 
 async function signIn() {
+
     const email = document.getElementById("authEmail").value.trim();
     const password = document.getElementById("authPassword").value;
 
@@ -183,6 +356,7 @@ async function signIn() {
 }
 
 async function signUp() {
+
     const email = document.getElementById("authEmail").value.trim();
     const password = document.getElementById("authPassword").value;
 
@@ -215,6 +389,7 @@ async function signUp() {
 }
 
 async function signOut() {
+
     const { error } = await supabaseClient.auth.signOut();
 
     if (error) {
@@ -224,6 +399,7 @@ async function signOut() {
 
     adminMode = false;
     closeAuthModal();
+
     alert("Du wurdest abgemeldet.");
 }
 
@@ -233,6 +409,7 @@ async function signOut() {
 // =====================================================
 
 async function loadReports() {
+
     if (!map) return;
 
     const { data, error } = await supabaseClient
@@ -248,16 +425,22 @@ async function loadReports() {
     const now = Date.now();
 
     reports = (data || []).filter(report => {
+
         if (!report.expires_at) return true;
+
         return new Date(report.expires_at).getTime() > now;
     });
 
     await loadConfirmationCounts();
+
     rebuildMarkers();
     updateReportList();
+
+    // Die Entfernungsprüfung erfolgt über den Live-GPS-Standort.
 }
 
 async function loadConfirmationCounts() {
+
     confirmationCounts.clear();
 
     const { data, error } = await supabaseClient
@@ -270,7 +453,9 @@ async function loadConfirmationCounts() {
     }
 
     (data || []).forEach(item => {
+
         const oldCount = confirmationCounts.get(item.report_id) || 0;
+
         confirmationCounts.set(item.report_id, oldCount + 1);
     });
 }
@@ -281,6 +466,7 @@ async function loadConfirmationCounts() {
 // =====================================================
 
 function subscribeToChanges() {
+
     supabaseClient
         .channel("roadguard-live")
         .on(
@@ -315,6 +501,7 @@ let searchMarker = null;
 let lastAddressSearch = 0;
 
 function initializeAddressSearch() {
+
     const input = document.getElementById("addressSearch");
 
     if (!input) {
@@ -323,6 +510,7 @@ function initializeAddressSearch() {
     }
 
     input.addEventListener("keydown", event => {
+
         if (event.key === "Enter") {
             event.preventDefault();
             searchAddress();
@@ -337,6 +525,7 @@ function initializeAddressSearch() {
 }
 
 async function searchAddress() {
+
     const input = document.getElementById("addressSearch");
 
     if (!input || !map) return;
@@ -349,7 +538,10 @@ async function searchAddress() {
         return;
     }
 
-    const wait = Math.max(0, 1100 - (Date.now() - lastAddressSearch));
+    const wait = Math.max(
+        0,
+        1100 - (Date.now() - lastAddressSearch)
+    );
 
     if (wait > 0) {
         await new Promise(resolve => setTimeout(resolve, wait));
@@ -366,6 +558,7 @@ async function searchAddress() {
     }
 
     try {
+
         const url = new URL("https://nominatim.openstreetmap.org/search");
 
         url.searchParams.set("format", "jsonv2");
@@ -378,7 +571,10 @@ async function searchAddress() {
         });
 
         if (!response.ok) {
-            throw new Error("Der Suchdienst antwortet gerade nicht (HTTP " + response.status + ").");
+            throw new Error(
+                "Der Suchdienst antwortet gerade nicht (HTTP " +
+                response.status + ")."
+            );
         }
 
         const results = await response.json();
@@ -411,9 +607,13 @@ async function searchAddress() {
             .openPopup();
 
     } catch (error) {
+
         console.error("ROADGUARD Adresssuche:", error);
+
         alert("Die Adresssuche ist fehlgeschlagen: " + error.message);
+
     } finally {
+
         if (button) {
             button.disabled = false;
             button.textContent = button.dataset.oldText || "Suchen";
@@ -429,18 +629,23 @@ async function searchAddress() {
 function createUserArrowIcon(heading = 0) {
 
     if (!document.getElementById("roadguard-arrow-style")) {
+
         const style = document.createElement("style");
+
         style.id = "roadguard-arrow-style";
+
         style.textContent = `
             .roadguard-user-arrow {
                 background: transparent !important;
                 border: none !important;
             }
         `;
+
         document.head.appendChild(style);
     }
 
     return L.divIcon({
+
         className: "roadguard-user-arrow",
 
         html: `
@@ -487,6 +692,7 @@ function createUserArrowIcon(heading = 0) {
 // =====================================================
 
 function startLiveLocation() {
+
     if (!navigator.geolocation) {
         console.error("Standortbestimmung wird nicht unterstützt.");
         return;
@@ -495,7 +701,9 @@ function startLiveLocation() {
     if (locationWatchId !== null) return;
 
     locationWatchId = navigator.geolocation.watchPosition(
+
         position => {
+
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
 
@@ -506,25 +714,34 @@ function startLiveLocation() {
                 : 0;
 
             if (!userMarker) {
+
                 userMarker = L.marker([lat, lon], {
                     icon: createUserArrowIcon(heading),
                     zIndexOffset: 1000
                 })
                     .addTo(map)
                     .bindPopup("Dein aktueller Standort");
+
             } else {
+
                 userMarker.setLatLng([lat, lon]);
                 userMarker.setIcon(createUserArrowIcon(heading));
             }
 
             if (!hasInitialLocation) {
+
                 map.setView([lat, lon], 16);
                 hasInitialLocation = true;
+
             } else {
+
                 map.panTo([lat, lon], { animate: true });
             }
 
             updateReportList();
+
+            // Entfernungswarnungen mit dem aktuellen GPS-Standort prüfen.
+            checkNearbyWarnings(lat, lon);
 
             console.log(
                 "ROADGUARD Live-Standort:",
@@ -534,13 +751,16 @@ function startLiveLocation() {
                 heading
             );
         },
+
         error => {
+
             console.error("Live-Standortfehler:", error);
 
             if (error.code === 1) {
                 alert("Bitte erlaube ROADGUARD den Standortzugriff in deinen iPhone-Einstellungen.");
             }
         },
+
         {
             enableHighAccuracy: true,
             maximumAge: 3000,
@@ -552,7 +772,9 @@ function startLiveLocation() {
 
 // Der runde Standortknopf bleibt weiterhin funktionsfähig.
 function getMyLocation() {
+
     if (userMarker && map) {
+
         const position = userMarker.getLatLng();
 
         map.setView(
@@ -568,22 +790,89 @@ function getMyLocation() {
 
 
 // =====================================================
+// ENTFERNUNGS-WARNSYSTEM
+// =====================================================
+
+function checkNearbyWarnings(userLat, userLon) {
+
+    reports.forEach(report => {
+
+        const distance = calculateDistance(
+            userLat,
+            userLon,
+            report.lat,
+            report.lon
+        );
+
+        const isBlitzer =
+            report.type === "Fester Blitzer" ||
+            report.type === "Mobiler Blitzer";
+
+        const category = isBlitzer ? "blitzer" : "danger";
+
+        let warningLevel = null;
+
+        if (distance <= ROADGUARD_WARNING_SETTINGS.secondDistance) {
+            warningLevel = 2;
+        } else if (distance <= ROADGUARD_WARNING_SETTINGS.firstDistance) {
+            warningLevel = 1;
+        }
+
+        if (warningLevel === null) {
+            playedWarnings.delete(report.id);
+            return;
+        }
+
+        // Wenn die Warntöne ausgeschaltet sind, nichts vormerken.
+        // Nach dem Aktivieren kann die nächste GPS-Aktualisierung warnen.
+        if (!roadguardAudioEnabled) {
+            return;
+        }
+
+        const previousLevel = playedWarnings.get(report.id) || 0;
+
+        if (warningLevel <= previousLevel) {
+            return;
+        }
+
+        playedWarnings.set(report.id, warningLevel);
+
+        playRoadguardTone(category, warningLevel);
+
+        console.log(
+            "ROADGUARD Warnung:",
+            report.type,
+            Math.round(distance) + " m",
+            "Stufe:",
+            warningLevel
+        );
+    });
+}
+
+
+// =====================================================
 // MELDE-MENÜ
 // =====================================================
 
 function openReportMenu() {
+
     if (!currentUser) {
+
         alert("Bitte melde dich zuerst an, um eine Gefahr zu melden.");
+
         openAuthModal();
+
         return;
     }
 
     const modal = document.getElementById("reportModal");
+
     modal.style.display = "flex";
     modal.classList.add("active");
 }
 
 function closeReportMenu() {
+
     const modal = document.getElementById("reportModal");
 
     if (!modal) return;
@@ -598,6 +887,7 @@ function closeReportMenu() {
 // =====================================================
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
+
     const earthRadius = 6371000;
     const radians = value => value * Math.PI / 180;
 
@@ -615,7 +905,9 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 }
 
 function findExistingReport(type, lat, lon) {
+
     return reports.find(report => {
+
         if (report.type !== type) return false;
 
         return calculateDistance(
@@ -633,10 +925,14 @@ function findExistingReport(type, lat, lon) {
 // =====================================================
 
 async function submitReport(type, icon) {
+
     if (!currentUser) {
+
         alert("Bitte melde dich zuerst an.");
+
         closeReportMenu();
         openAuthModal();
+
         return;
     }
 
@@ -646,13 +942,16 @@ async function submitReport(type, icon) {
     }
 
     navigator.geolocation.getCurrentPosition(
+
         async position => {
+
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
 
             const existingReport = findExistingReport(type, lat, lon);
 
             if (existingReport) {
+
                 const shouldConfirm = confirm(
                     "In der Nähe gibt es bereits eine Meldung dieser Art.\n\n" +
                     "Möchtest du diese Meldung stattdessen bestätigen?"
@@ -671,12 +970,17 @@ async function submitReport(type, icon) {
             let expiresAt = null;
 
             if (type === "Fester Blitzer") {
+
                 expiresAt = null;
+
             } else if (type === "Mobiler Blitzer") {
+
                 expiresAt = new Date(
                     now.getTime() + MOBILE_BLITZER_LIFETIME
                 ).toISOString();
+
             } else {
+
                 expiresAt = new Date(
                     now.getTime() + NORMAL_LIFETIME
                 ).toISOString();
@@ -696,8 +1000,11 @@ async function submitReport(type, icon) {
                 });
 
             if (error) {
+
                 console.error("Fehler beim Speichern:", error);
+
                 alert("Die Meldung konnte nicht gespeichert werden: " + error.message);
+
                 return;
             }
 
@@ -707,10 +1014,14 @@ async function submitReport(type, icon) {
 
             await loadReports();
         },
+
         error => {
+
             console.error("Standortfehler:", error);
+
             alert("Dein Standort konnte nicht ermittelt werden. Bitte erlaube den Standortzugriff.");
         },
+
         {
             enableHighAccuracy: true,
             timeout: 15000,
@@ -725,9 +1036,13 @@ async function submitReport(type, icon) {
 // =====================================================
 
 async function confirmReport(reportId) {
+
     if (!currentUser) {
+
         alert("Bitte melde dich zuerst an.");
+
         openAuthModal();
+
         return;
     }
 
@@ -737,8 +1052,11 @@ async function confirmReport(reportId) {
     );
 
     if (error) {
+
         console.error("Bestätigung fehlgeschlagen:", error);
+
         alert("Die Bestätigung ist fehlgeschlagen: " + error.message);
+
         return;
     }
 
@@ -758,29 +1076,40 @@ async function confirmReport(reportId) {
 // =====================================================
 
 function addReportToMap(report) {
+
     if (!map || reportMarkers.has(report.id)) return;
 
     let sticker = report.icon || "⚠️";
     let borderColor = "#64748b";
 
     if (report.type === "Fester Blitzer") {
+
         sticker = "📸";
         borderColor = "#eab308";
+
     } else if (report.type === "Mobiler Blitzer") {
+
         sticker = "🚔";
         borderColor = "#f97316";
+
     } else if (report.type === "Unfall") {
+
         sticker = "🚨";
         borderColor = "#ef4444";
+
     } else if (report.type === "Stau") {
+
         sticker = "🚗";
         borderColor = "#f97316";
+
     } else if (report.type === "Baustelle") {
+
         sticker = "🚧";
         borderColor = "#eab308";
     }
 
     const markerIcon = L.divIcon({
+
         html: `
             <div style="
                 width:42px;
@@ -795,6 +1124,7 @@ function addReportToMap(report) {
                 box-shadow:0 3px 10px rgba(0,0,0,.45);
             ">${escapeHTML(sticker)}</div>
         `,
+
         className: "roadguard-sticker",
         iconSize: [42, 42],
         iconAnchor: [21, 21]
@@ -816,9 +1146,11 @@ function addReportToMap(report) {
 }
 
 function rebuildMarkers() {
+
     if (!map) return;
 
     reportMarkers.forEach(marker => map.removeLayer(marker));
+
     reportMarkers.clear();
 
     reports.forEach(report => addReportToMap(report));
@@ -830,6 +1162,7 @@ function rebuildMarkers() {
 // =====================================================
 
 async function deleteReport(reportId) {
+
     if (!adminMode) {
         alert("Nur der Administrator darf Meldungen löschen.");
         return;
@@ -849,8 +1182,11 @@ async function deleteReport(reportId) {
         .eq("id", reportId);
 
     if (error) {
+
         console.error("Löschen fehlgeschlagen:", error);
+
         alert("Die Meldung konnte nicht gelöscht werden: " + error.message);
+
         return;
     }
 
@@ -863,6 +1199,7 @@ async function deleteReport(reportId) {
 // =====================================================
 
 function updateReportList() {
+
     const list = document.getElementById("reportList");
 
     if (!list) return;
@@ -870,7 +1207,9 @@ function updateReportList() {
     list.innerHTML = "";
 
     if (adminMode) {
+
         const banner = document.createElement("div");
+
         banner.className = "adminBanner";
 
         banner.innerHTML = `
@@ -882,7 +1221,9 @@ function updateReportList() {
     }
 
     if (reports.length === 0) {
+
         const empty = document.createElement("div");
+
         empty.className = "emptyReports";
 
         empty.innerHTML = `
@@ -891,13 +1232,16 @@ function updateReportList() {
         `;
 
         list.appendChild(empty);
+
         return;
     }
 
     const userPosition = userMarker ? userMarker.getLatLng() : null;
 
     const sortedReports = [...reports].sort((a, b) => {
+
         if (!userPosition) {
+
             return new Date(b.created_at).getTime() -
                 new Date(a.created_at).getTime();
         }
@@ -920,7 +1264,9 @@ function updateReportList() {
     });
 
     sortedReports.forEach(report => {
+
         const card = document.createElement("div");
+
         card.className = "reportCard";
 
         const lastTime = new Date(
@@ -935,16 +1281,22 @@ function updateReportList() {
         let timeText = "Gerade eben";
 
         if (minutesAgo >= 1 && minutesAgo < 60) {
+
             timeText = "Vor " + minutesAgo + " Minuten";
+
         } else if (minutesAgo >= 60 && minutesAgo < 1440) {
+
             timeText = "Vor " + Math.floor(minutesAgo / 60) + " Stunden";
+
         } else if (minutesAgo >= 1440) {
+
             timeText = "Vor " + Math.floor(minutesAgo / 1440) + " Tagen";
         }
 
         let expiryText = "Dauerhaft gespeichert";
 
         if (report.expires_at) {
+
             const remaining = Math.max(
                 0,
                 Math.ceil(
@@ -953,10 +1305,15 @@ function updateReportList() {
             );
 
             if (remaining < 60) {
+
                 expiryText = "Noch " + remaining + " Minuten";
+
             } else if (remaining < 1440) {
+
                 expiryText = "Noch " + Math.floor(remaining / 60) + " Stunden";
+
             } else {
+
                 expiryText = "Noch " + Math.ceil(remaining / 1440) + " Tage";
             }
         }
@@ -966,6 +1323,7 @@ function updateReportList() {
         let distanceText = "";
 
         if (userPosition) {
+
             const distance = calculateDistance(
                 userPosition.lat,
                 userPosition.lng,
@@ -974,8 +1332,11 @@ function updateReportList() {
             );
 
             if (distance < 1000) {
+
                 distanceText = Math.round(distance) + " m entfernt";
+
             } else {
+
                 distanceText = (distance / 1000)
                     .toFixed(1)
                     .replace(".", ",") + " km entfernt";
@@ -1013,6 +1374,7 @@ function updateReportList() {
         `;
 
         card.addEventListener("click", event => {
+
             if (event.target.closest("button")) return;
 
             map.setView([report.lat, report.lon], 16);
@@ -1030,6 +1392,7 @@ function updateReportList() {
             });
 
         if (adminMode) {
+
             card.querySelector(".deleteReportButton")
                 .addEventListener("click", () => {
                     deleteReport(report.id);
@@ -1046,6 +1409,7 @@ function updateReportList() {
 // =====================================================
 
 function escapeHTML(value) {
+
     return String(value)
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
@@ -1060,6 +1424,7 @@ function escapeHTML(value) {
 // =====================================================
 
 function showMap() {
+
     if (map) {
         setTimeout(() => map.invalidateSize(), 100);
     }
@@ -1082,18 +1447,18 @@ function showSettings() {
 // ROADGUARD UPDATE-FENSTER
 // =====================================================
 
-// Versionsnummer ändern, damit das Fenster bei einem
-// späteren Update erneut angezeigt wird.
-
-const ROADGUARD_INFO_VERSION = "roadguard-info-v1.0";
+const ROADGUARD_INFO_VERSION = "roadguard-info-v1.1";
 
 function showRoadguardInfoIfNeeded() {
 
     try {
+
         if (localStorage.getItem(ROADGUARD_INFO_VERSION) === "accepted") {
             return;
         }
+
     } catch (error) {
+
         console.error("ROADGUARD: Speicherzugriff nicht möglich.", error);
     }
 
@@ -1236,6 +1601,7 @@ function showRoadguardInfoIfNeeded() {
     document.head.appendChild(style);
 
     const overlay = document.createElement("div");
+
     overlay.id = "roadguardWelcome";
 
     overlay.innerHTML = `
@@ -1248,7 +1614,7 @@ function showRoadguardInfoIfNeeded() {
             </div>
 
             <div class="versionText">
-                VERSION 1.0
+                VERSION 1.1
             </div>
 
             <h2>Das ist neu!</h2>
@@ -1299,13 +1665,12 @@ function showRoadguardInfoIfNeeded() {
             </div>
 
             <div class="updateItem">
-                <div class="updateIcon">🛠️</div>
+                <div class="updateIcon">🔉</div>
                 <div class="updateText">
-                    <strong>Fehlerbehebung</strong>
+                    <strong>Neue Warntöne</strong>
                     <span>
-                        Einige Fehler wurden behoben z.B 
-                        (Fehler beim laden der Karte, Live Verfolgung)
-                         und vieles mehr.
+                        Jetzt gibt es "Warn Töne" die dich vor
+                        Gefahren warnen!.
                     </span>
                 </div>
             </div>
@@ -1331,11 +1696,14 @@ function showRoadguardInfoIfNeeded() {
         .addEventListener("click", () => {
 
             try {
+
                 localStorage.setItem(
                     ROADGUARD_INFO_VERSION,
                     "accepted"
                 );
+
             } catch (error) {
+
                 console.error("ROADGUARD: Bestätigung konnte nicht gespeichert werden.", error);
             }
 
@@ -1359,9 +1727,17 @@ setInterval(() => {
 // =====================================================
 
 if ("serviceWorker" in navigator) {
+
     window.addEventListener("load", () => {
+
         navigator.serviceWorker.register("./sw.js")
-            .then(() => console.log("ROADGUARD: Offline-Funktion aktiviert."))
-            .catch(error => console.error("Service Worker:", error));
+
+            .then(() => {
+                console.log("ROADGUARD: Offline-Funktion aktiviert.");
+            })
+
+            .catch(error => {
+                console.error("Service Worker:", error);
+            });
     });
 }
