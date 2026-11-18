@@ -1741,4 +1741,3 @@ if ("serviceWorker" in navigator) {
             });
     });
 }
-
