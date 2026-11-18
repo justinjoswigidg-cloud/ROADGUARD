@@ -1684,7 +1684,7 @@ function showRoadguardInfoIfNeeded() {
             </button>
 
             <div class="welcomeFooter">
-                ROADGUARD · Version 1.0
+                ROADGUARD · Version 1.1
             </div>
 
         </div>
